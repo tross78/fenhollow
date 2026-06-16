@@ -1,0 +1,336 @@
+* {
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+}
+
+html, body {
+  overscroll-behavior: none;
+}
+
+body {
+  background: radial-gradient(circle at top, #203120 0%, #121812 35%, #080c08 100%);
+  color: #edf5d7;
+  font-family: "Courier New", Courier, monospace;
+  padding: 0;
+  margin: 0;
+  display: block;
+  height: 100vh;
+  height: 100dvh;
+  text-shadow: 0 0 2px rgba(180, 210, 170, 0.12);
+  overflow: hidden;
+  /* Mobile hardening: no text selection, no iOS long-press callout/magnifier, and
+     no double-tap-to-zoom. The game is a canvas surface, not a document. */
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+  touch-action: manipulation;
+}
+
+@keyframes logFadeIn {
+  from { opacity: 0; transform: translateY(5px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes shake {
+  0% { transform: translate(0, 0); }
+  20% { transform: translate(-4px, 4px); }
+  40% { transform: translate(-4px, -4px); }
+  60% { transform: translate(4px, 4px); }
+  80% { transform: translate(4px, -4px); }
+  100% { transform: translate(0, 0); }
+}
+
+.shake {
+  animation: shake 0.2s cubic-bezier(.36, .07, .19, .97) both;
+}
+
+.log-line {
+  animation: logFadeIn 0.1s ease-out forwards;
+  margin-bottom: 2px;
+}
+
+#output {
+  flex: 1 1 0;
+  overflow-y: auto;
+  white-space: pre-wrap;
+  margin-bottom: 8px;
+  min-height: 0;
+  scrollbar-width: thin;
+  scrollbar-color: #c7d8ab #080c08;
+  overscroll-behavior: contain;
+}
+
+#action-buttons {
+  display: none;
+}
+
+.action-btn {
+  background: rgba(56, 78, 48, 0.9);
+  border: 1px solid #c7d8ab;
+  color: #f6edc5;
+  font-family: inherit;
+  font-size: 0.88em;
+  padding: 11px 16px;
+  cursor: pointer;
+  border-radius: 8px;
+  user-select: none;
+  touch-action: manipulation;
+  transition: all 0.1s ease;
+  box-shadow: 0 2px 0 rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.08);
+}
+
+.action-btn:active {
+  background: #ffdd55;
+  border-color: #f6edc5;
+  color: #121812;
+  transform: translateY(1px);
+  box-shadow: none;
+}
+
+#suggestions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 4px 0;
+  min-height: 0;
+}
+
+.chip {
+  background: rgba(18, 24, 18, 0.9);
+  border: 1px solid #adc39d;
+  color: #edf5d7;
+  font-family: inherit;
+  font-size: 0.85em;
+  padding: 5px 12px;
+  cursor: pointer;
+  border-radius: 4px;
+  user-select: none;
+  touch-action: manipulation;
+  transition: all 0.1s ease;
+}
+
+.chip:hover,
+.chip.active {
+  background: #88cc44;
+  color: #121812;
+  border-color: #f6edc5;
+}
+
+.chip.immediate {
+  border-color: #ffdd55;
+}
+
+.input-container {
+  display: flex;
+  align-items: center;
+  padding: 6px 0;
+  border-top: 1px solid rgba(199, 216, 171, 0.2);
+  padding-bottom: max(6px, env(safe-area-inset-bottom));
+}
+
+.input-container.is-hidden {
+  display: none;
+}
+
+#prompt {
+  color: #ffdd55;
+  margin-right: 10px;
+  flex-shrink: 0;
+  font-weight: bold;
+}
+
+#input {
+  background: transparent;
+  border: none;
+  color: #f6edc5;
+  font-family: inherit;
+  font-size: inherit;
+  flex: 1;
+  outline: none;
+  min-width: 0;
+}
+
+#radar-container {
+  display: none;
+  width: 100%;
+  height: 250px;
+  background: #080c08;
+  border: 1px solid #1a241a;
+  margin-bottom: 4px;
+  gap: 1px;
+  padding: 2px;
+  user-select: none;
+  touch-action: none;
+  box-shadow: inset 0 0 24px rgba(0, 0, 0, 0.8);
+  image-rendering: pixelated;
+  overflow: hidden;
+}
+
+.tile {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.7em;
+  color: #1a2a1a;
+  cursor: pointer;
+}
+
+.tile:hover {
+  background: rgba(199, 216, 171, 0.08);
+}
+
+.tile.entity-self { color: #88cc44; font-weight: bold; text-shadow: 0 0 5px #88cc44; }
+.tile.entity-peer { color: #6aaac8; }
+.tile.entity-npc { color: #ffdd55; }
+.tile.entity-enemy { color: #ff4444; }
+.tile.portal { color: #cc7050; }
+
+#game-area {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  width: 100dvw;
+  height: 100vh;
+  height: 100dvh;
+  overflow: hidden;
+  display: block;
+  background: linear-gradient(180deg, #1b291b 0%, #0a0d0a 100%);
+  /* Own all gestures on the play surface so the browser never pans/zooms it. */
+  touch-action: none;
+}
+
+#side-panel {
+  display: none;
+}
+
+.game-canvas {
+  display: block;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+  cursor: pointer;
+  background: #000;
+  border: none;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+}
+
+.debug-console {
+  display: flex;
+  flex-direction: column;
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  min-height: 180px;
+  max-height: 42vh;
+  padding: 12px;
+  background: rgba(18, 24, 18, 0.96);
+  border-top: 2px solid #c7d8ab;
+  z-index: 35;
+  box-shadow: 0 -8px 24px rgba(0,0,0,0.5);
+}
+
+.debug-console.is-hidden {
+  display: none;
+}
+
+.banner-ad.is-hidden {
+  display: none;
+}
+
+#ui-modal-root {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 40;
+}
+
+#ui-modal-root.modal-root-active {
+  pointer-events: auto;
+}
+
+.ui-modal-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(8, 12, 8, 0.85);
+  backdrop-filter: blur(4px);
+}
+
+.ui-modal-panel {
+  width: min(92vw, 420px);
+  display: grid;
+  gap: 12px;
+  padding: 20px;
+  background: rgba(18, 24, 18, 0.98);
+  border: 2px solid #c7d8ab;
+  border-radius: 8px;
+  box-shadow: 0 0 40px rgba(0, 0, 0, 0.6);
+}
+
+.ui-modal-title {
+  margin: 0;
+  font-size: 1.1rem;
+  color: #ffdd55;
+  font-weight: bold;
+}
+
+.ui-modal-input {
+  width: 100%;
+  padding: 12px;
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid #adc39d;
+  border-radius: 4px;
+  color: #edf5d7;
+  font: inherit;
+}
+
+.ui-modal-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.ui-modal-button {
+  padding: 10px 16px;
+  background: rgba(56, 78, 48, 0.9);
+  border: 1px solid #c7d8ab;
+  border-radius: 6px;
+  color: #f6edc5;
+  font: inherit;
+  cursor: pointer;
+}
+
+.ui-modal-button-primary {
+  background: #88cc44;
+  color: #121812;
+  border-color: #f6edc5;
+}
+
+@media (orientation: landscape) {
+  #action-buttons {
+    justify-content: center;
+    padding-left: 18px;
+    padding-right: 18px;
+  }
+}
+
+@media (max-width: 700px) {
+  #action-buttons {
+    justify-content: flex-start;
+    max-height: 30vh;
+    padding: 8px;
+    padding-bottom: calc(env(safe-area-inset-bottom) + 8px);
+  }
+
+  .action-btn {
+    font-size: 0.8em;
+    padding: 9px 12px;
+  }
+}
