@@ -8,7 +8,7 @@
  * build that changes the bundle produces a new worker → install → fresh precache,
  * without needing hashed filenames.
  */
-const CACHE_VERSION = '5fd480ecc879';
+const CACHE_VERSION = 'cbfb96384653';
 const CACHE_NAME = `fenhollow-${CACHE_VERSION}`;
 
 // App shell. Relative to the worker's scope (the deploy root).
@@ -17,7 +17,10 @@ const SHELL = ['./', './index.html', './main.js', './styles.css', './manifest.js
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME)
-      .then((cache) => cache.addAll(SHELL))
+      .then((cache) => cache.addAll(SHELL)
+        // Optional encrypted module — exists only in protected ("code-DRM") builds. Added
+        // separately/tolerantly so its absence in a normal build can't abort the precache.
+        .then(() => cache.add('./protected.enc').catch(() => {})))
       // A single missing/renamed file shouldn't abort the whole install.
       .catch(() => {})
       .then(() => self.skipWaiting()),
