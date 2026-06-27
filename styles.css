@@ -238,10 +238,6 @@ body {
   display: none;
 }
 
-.banner-ad.is-hidden {
-  display: none;
-}
-
 #ui-modal-root {
   position: fixed;
   inset: 0;
