@@ -3,6 +3,16 @@
   -webkit-tap-highlight-color: transparent;
 }
 
+:root {
+  /* env() can't be read directly via JS getComputedStyle(el).getPropertyValue('env(...)')
+     — it has to be captured into a real custom property first, which runtime.js's
+     updateViewport() then reads to shrink the viewport for notch/home-indicator safe areas. */
+  --safe-area-top: env(safe-area-inset-top, 0px);
+  --safe-area-right: env(safe-area-inset-right, 0px);
+  --safe-area-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-area-left: env(safe-area-inset-left, 0px);
+}
+
 html, body {
   overscroll-behavior: none;
 }
@@ -29,19 +39,6 @@ body {
 @keyframes logFadeIn {
   from { opacity: 0; transform: translateY(5px); }
   to { opacity: 1; transform: translateY(0); }
-}
-
-@keyframes shake {
-  0% { transform: translate(0, 0); }
-  20% { transform: translate(-4px, 4px); }
-  40% { transform: translate(-4px, -4px); }
-  60% { transform: translate(4px, 4px); }
-  80% { transform: translate(4px, -4px); }
-  100% { transform: translate(0, 0); }
-}
-
-.shake {
-  animation: shake 0.2s cubic-bezier(.36, .07, .19, .97) both;
 }
 
 .log-line {
@@ -199,6 +196,13 @@ body {
   background: linear-gradient(180deg, #1b291b 0%, #0a0d0a 100%);
   /* Own all gestures on the play surface so the browser never pans/zooms it. */
   touch-action: none;
+  /* runtime.js sizes VP.CW/CH smaller than the raw viewport to account for the
+     notch/home-indicator, but the ResizeObserver in renderer.js scales the canvas
+     to fill this container's clientWidth/clientHeight — without this padding that
+     scale-to-fit re-stretches the canvas back out under the safe-area chrome the
+     viewport math was trying to avoid. */
+  padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+  box-sizing: border-box;
 }
 
 #side-panel {
