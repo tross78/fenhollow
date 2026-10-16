@@ -8,7 +8,7 @@
  * build that changes the bundle produces a new worker → install → fresh precache,
  * without needing hashed filenames.
  */
-const CACHE_VERSION = 'fd8e974a8907';
+const CACHE_VERSION = 'c0683333a8cb';
 const CACHE_NAME = `fenhollow-${CACHE_VERSION}`;
 
 // App shell. Relative to the worker's scope (the deploy root).
